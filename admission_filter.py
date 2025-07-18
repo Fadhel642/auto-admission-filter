@@ -32,4 +32,42 @@ for num in messages[0].split():                                               # 
         if isinstance(response_part, tuple):                                  # Permet de vérifier qu'on a bien une partie avec les données du mail
             msg = email.message_from_bytes(response_part[1])                  # On convertit le contenu brut en objet email lisible
 
- 
+
+            # Sujet
+            subject, encoding = decode_header(msg["Subject"])[0]              # Récupère l'en-tête « Subject » et la méthode d'encodage (ex. UTF-8, ISO-8859-1…)
+            if isinstance(subject, bytes):                                    # Si le sujet est encore sous forme d'octets (bytes) on le décode avec l’encodage indiqué ; si None, on force "utf-8"
+                subject = subject.decode(encoding or "utf-8",errors="ignore")        # ignore les caractères illisibles pour éviter une exception
+
+
+            # Corps du mail
+            body = ""                                                                                # Variable où l'on stockera le texte final
+            if msg.is_multipart():                                                                   # Si l'e-mail est « multipart » (plusieurs parties : texte, HTML, pièces jointes…)
+                for part in msg.walk():                                                              # On parcourt chaque sous-partie
+                    if part.get_content_type() == "text/plain":                                      # On cherche spécifiquement la partie « text/plain »
+                        try:
+                            body = part.get_payload(decode=True).decode(errors="ignore")             # On récupère le contenu, on le décode et on ignore les caractères invalides
+                        except:                                                                      # En cas de problème de décodage…
+                            pass                                                                     # …on l’ignore pour ne pas planter le script
+                        break                                                                        # Dès qu'on a trouvé le texte brut, on sort de la boucle
+            else:                                                                                    # Si le mail n'est PAS multipart (un seul bloc)
+                try:
+                    body = msg.get_payload(decode=True).decode(errors="ignore")
+                except:
+                    pass
+
+            full_content = f"{subject}\n{body}".lower()        # On assemble le sujet et le corps du mail en une seule chaîne, puis on met tout en minuscules pour faciliter la recherche
+
+
+            # Détection de phrase
+            match = any(keyword in full_content for keyword in keywords)                             # On vérifie si au moins un des mots/phrases clés est présent dans le mail
+
+            with open("mail_log.txt", "a") as log:                                                   # On ouvre un fichier de log en mode ajout ("a") pour enregistrer ce qu'on a fait
+                    if match:                                                                        # Si le mail contient une phrase clé (donc un refus) :
+                        imap.store(num, '+FLAGS', '\\Deleted')                                       # On marque le mail pour qu'il soit supprimé (drapeau \Deleted)
+                        log.write(f"[SUPPRIMÉ] {subject}\n")                                         # On écrit dans le journal que le mail a été supprimé
+
+                    else:                                                                            # Si aucune phrase clé n'est détectée :
+                        log.write(f"[OK] {subject}\n")                                               # On enregistre simplement dans le log que le mail a été conservé
+
+imap.expunge()  # Supprime définitivement tous les mails marqués comme "\\Deleted"
+imap.logout()  # Ferme proprement la connexion avec le serveur Gmail
