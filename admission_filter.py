@@ -10,3 +10,14 @@ load_dotenv()                             # Charge les variables (EMAIL et PASSW
 EMAIL = os.getenv("EMAIL")                # Récupère la valeur de la variable EMAIL depuis le fichier .env
 PASSWORD = os.getenv("PASSWORD")          #    =      =   =     =  =   =   PASSWORD depuis le fichier .env
 IMAP_SERVER = "imap.gmail.com"            # Adresse du serveur IMAP de Gmail, pour accéder à la boîte de réception
+
+
+#CHARGER LES PHRASES CLÉS 
+with open("phrases_refus.txt", "r") as f:                                     # ("r") Permet d'ouvrer le fichier "phrases_refus.txt" en mode lecture 
+    keywords = [line.strip().lower() for line in f if line.strip()]           # on stocke toutes les phrases dans une liste appelée keywords
+
+
+# CONNEXION À LA BOITE MAIL
+imap = imaplib.IMAP4_SSL(IMAP_SERVER)     # Permet de se connecte au serveur IMAP de Gmail en mode sécurisé (SSL)
+imap.login(EMAIL, PASSWORD)               # On se connecte à la boîte mail avec les identifiants
+imap.select("inbox")                      # On sélectionne le dossier 'inbox' (la boîte de réception) pour y lire les mails
