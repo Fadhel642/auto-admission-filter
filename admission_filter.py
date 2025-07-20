@@ -13,8 +13,8 @@ IMAP_SERVER = "imap.gmail.com"            # Adresse du serveur IMAP de Gmail, po
 
 
 #CHARGER LES PHRASES CLÉS 
-with open("phrases_refus.txt", "r") as f:                                     # ("r") Permet d'ouvrer le fichier "phrases_refus.txt" en mode lecture 
-    keywords = [line.strip().lower() for line in f if line.strip()]           # on stocke toutes les phrases dans une liste appelée keywords
+with open("phrases_refus.txt", "r", encoding="utf-8") as f:                   # On ouvre le fichier contenant les phrases à rechercher (en mode lecture et encodage UTF-8)
+    keywords = [line.strip().lower() for line in f if line.strip()]           # On stocke toutes les phrases non vides dans une liste appelée keywords, en minuscules pour la recherche
 
 
 # CONNEXION À LA BOITE MAIL
