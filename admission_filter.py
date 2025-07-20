@@ -72,15 +72,17 @@ for num in messages[0].split():                                               # 
 
 
             # Détection de phrase
-            match = any(keyword in full_content for keyword in keywords)                             # On vérifie si au moins un des mots/phrases clés est présent dans le mail
+            
+            match = any(keyword in full_content for keyword in keywords)     # On vérifie si au moins un mot/phrase clé est présent dans le contenu
 
-            with open("mail_log.txt", "a") as log:                                                   # On ouvre un fichier de log en mode ajout ("a") pour enregistrer ce qu'on a fait
-                    if match:                                                                        # Si le mail contient une phrase clé (donc un refus) :
-                        imap.store(num, '+FLAGS', '\\Deleted')                                       # On marque le mail pour qu'il soit supprimé (drapeau \Deleted)
-                        log.write(f"[SUPPRIMÉ] {subject}\n")                                         # On écrit dans le journal que le mail a été supprimé
+            # Journalisation dans un fichier
+            with open("mail_log.txt", "a", encoding="utf-8") as log:         # On ouvre le fichier log pour enregistrer les résultats
+                if match:                                                    # Si le mail contient une phrase clé (ex : refus) :
+                    # imap.store(num, '+FLAGS', '\\Deleted')                # (Ligne désactivée pour ne pas supprimer pendant les tests) !               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    log.write(f"[SUPPRIMÉ] {subject}\n")                     # On écrit dans le journal que le mail serait supprimé
+                    print(f"[TEST] Ce mail serait supprimé : {subject}")     # Affiche aussi à l’écran pendant le test
+                else:
+                    log.write(f"[OK] {subject}\n")                           # Si aucun mot-clé détecté, on note que le mail est bon
 
-                    else:                                                                            # Si aucune phrase clé n'est détectée :
-                        log.write(f"[OK] {subject}\n")                                               # On enregistre simplement dans le log que le mail a été conservé
-
-imap.expunge()  # Supprime définitivement tous les mails marqués comme "\\Deleted"
-imap.logout()  # Ferme proprement la connexion avec le serveur Gmail
+#imap.expunge()  # (Désactivé pour ne pas supprimer les mails testés) !           !!!!!!!!!!!!!!!!!!!!!!!!
+imap.logout()    # Ferme proprement la connexion avec le serveur Gmail
