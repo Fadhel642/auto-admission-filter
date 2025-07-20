@@ -35,23 +35,36 @@ for num in messages[0].split():                                               # 
 
             # Sujet
             subject, encoding = decode_header(msg["Subject"])[0]              # Récupère l'en-tête « Subject » et la méthode d'encodage (ex. UTF-8, ISO-8859-1…)
-            if isinstance(subject, bytes):                                    # Si le sujet est encore sous forme d'octets (bytes) on le décode avec l’encodage indiqué ; si None, on force "utf-8"
-                subject = subject.decode(encoding or "utf-8",errors="ignore")        # ignore les caractères illisibles pour éviter une exception
+            if isinstance(subject, bytes):                                    # Si le sujet est encore sous forme binaire, on le décode en texte
+                subject = subject.decode(encoding or "utf-8",errors="ignore")         # Si l'encodage est inconnu, on force l'UTF-8 et on ignore les erreurs
 
 
             # Corps du mail
             body = ""                                                                                # Variable où l'on stockera le texte final
-            if msg.is_multipart():                                                                   # Si l'e-mail est « multipart » (plusieurs parties : texte, HTML, pièces jointes…)
-                for part in msg.walk():                                                              # On parcourt chaque sous-partie
-                    if part.get_content_type() == "text/plain":                                      # On cherche spécifiquement la partie « text/plain »
-                        try:
-                            body = part.get_payload(decode=True).decode(errors="ignore")             # On récupère le contenu, on le décode et on ignore les caractères invalides
-                        except:                                                                      # En cas de problème de décodage…
-                            pass                                                                     # …on l’ignore pour ne pas planter le script
-                        break                                                                        # Dès qu'on a trouvé le texte brut, on sort de la boucle
-            else:                                                                                    # Si le mail n'est PAS multipart (un seul bloc)
+            if msg.is_multipart():                                                                   # Si le mail est en plusieurs parties (texte + HTML + pièce jointe…)
+                for part in msg.walk():                                                              # On parcourt chaque partie du message
+                    content_type = part.get_content_type()                                           # On récupère le type de contenu (ex : text/plain ou text/html)
+                    content_disposition = str(part.get("Content-Disposition"))
+
+                    if "attachment" in content_disposition:                  # On ignore les pièces jointes
+                        continue
+                        
+                    try:
+                        payload = part.get_payload(decode=True).decode(errors="ignore")   # On décode le contenu
+                    except:
+                        continue
+                    if content_type == "text/plain":                         # Si on trouve du texte brut, on le prend
+                        body = payload
+                        break
+                    elif content_type == "text/html" and not body:           # Si on ne trouve pas de texte brut, on prend le HTML
+                        body = re.sub('<[^<]+?>', '', payload)               # On enlève toutes les balises HTML
+            else:                                                            # Si le mail n'est pas multipart (un seul bloc)
                 try:
-                    body = msg.get_payload(decode=True).decode(errors="ignore")
+                    payload = msg.get_payload(decode=True).decode(errors="ignore")  # On décode le corps
+                    if msg.get_content_type() == "text/html":                # Si c’est du HTML, on nettoie les balises
+                        body = re.sub('<[^<]+?>', '', payload)
+                    else:
+                        body = payload                                       # Sinon on prend le texte tel quel
                 except:
                     pass
 
