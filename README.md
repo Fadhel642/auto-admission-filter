@@ -31,5 +31,5 @@ Voir chaque jour des “nous ne donnons pas suite” ou “votre candidature n�
   # imap.store(num, '+FLAGS', '\\Deleted')
   # imap.expunge()
   ```
-  Supprime le **#** devant ces lignes seulement si tu es sûr de ta détection.
+  Supprime le (**#**) devant ces lignes seulement si tu es sûr de ta détection.
 - **ATTENTION** : Ne jamais lancer sans tester (PS: j’ai failli supprimer tous mes mails)
